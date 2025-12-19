@@ -1,0 +1,5 @@
+# Personal AWS configuration files
+eks-cluster/eks-ebs-csi-role-trust.yaml.personal
+
+# macOS
+.DS_Store
