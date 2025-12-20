@@ -102,12 +102,12 @@ validate: ## Validate prerequisites and configuration
 	$(call check_command,make)
 	$(call validate_number,"NODE_COUNT",$(NODE_COUNT))
 	@if [ $(NODE_COUNT) -lt 1 ] || [ $(NODE_COUNT) -gt 10 ]; then \
-		$(call log_error,"NODE_COUNT must be between 1 and 10"); exit 1; \
+		echo "$(RED)[ERROR]$(RESET) NODE_COUNT must be between 1 and 10"; exit 1; \
 	fi
 	$(call log_info,"Checking AWS credentials...")
-	@aws sts get-caller-identity >/dev/null 2>&1 || { $(call log_error,"AWS credentials not configured"); exit 1; }
+	@aws sts get-caller-identity >/dev/null 2>&1 || { echo "$(RED)[ERROR]$(RESET) AWS credentials not configured"; exit 1; }
 	$(call log_info,"Validating AWS region...")
-	@aws ec2 describe-regions --region $(REGION) >/dev/null 2>&1 || { $(call log_error,"Invalid region: $(REGION)"); exit 1; }
+	@aws ec2 describe-regions --region $(REGION) >/dev/null 2>&1 || { echo "$(RED)[ERROR]$(RESET) Invalid region: $(REGION)"; exit 1; }
 	$(call log_success,"All prerequisites validated")
 
 plan: validate ## Show what resources would be created (dry-run)
@@ -160,33 +160,33 @@ all: validate ## Complete NSM-enabled EKS cluster setup
 create-roles: ## Create IAM roles for EKS cluster, node group, and EBS CSI driver
 	$(call log_info,"Creating IAM roles...")
 	@$(call log_info,"Creating EKS cluster role...")
-	@aws iam create-role --role-name $(CLUSTER_ROLE_NAME) --assume-role-policy-document file://eks-cluster-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"Role $(CLUSTER_ROLE_NAME) already exists")
+	@aws iam create-role --role-name $(CLUSTER_ROLE_NAME) --assume-role-policy-document file://eks-cluster-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Role $(CLUSTER_ROLE_NAME) already exists"
 	@aws iam attach-role-policy --role-name $(CLUSTER_ROLE_NAME) --policy-arn $(EKS_CLUSTER_POLICY) 2>/dev/null || true
 	@$(call log_info,"Creating EKS node group role...")
-	@aws iam create-role --role-name $(NODEGROUP_ROLE_NAME) --assume-role-policy-document file://eks-nodegroup-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"Role $(NODEGROUP_ROLE_NAME) already exists")
+	@aws iam create-role --role-name $(NODEGROUP_ROLE_NAME) --assume-role-policy-document file://eks-nodegroup-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Role $(NODEGROUP_ROLE_NAME) already exists"
 	@aws iam attach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(EKS_WORKER_NODE_POLICY) 2>/dev/null || true
 	@aws iam attach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(EKS_CNI_POLICY) 2>/dev/null || true
 	@aws iam attach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(ECR_READ_ONLY_POLICY) 2>/dev/null || true
 	@$(call log_info,"Creating EBS CSI driver role...")
-	@aws iam create-role --role-name $(EBS_CSI_ROLE_NAME) --assume-role-policy-document file://eks-ebs-csi-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"Role $(EBS_CSI_ROLE_NAME) already exists")
+	@aws iam create-role --role-name $(EBS_CSI_ROLE_NAME) --assume-role-policy-document file://eks-ebs-csi-role-trust.yaml $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Role $(EBS_CSI_ROLE_NAME) already exists"
 	@aws iam attach-role-policy --role-name $(EBS_CSI_ROLE_NAME) --policy-arn $(EBS_CSI_POLICY) 2>/dev/null || true
 	$(call log_success,"IAM roles created successfully")
 
 create-cluster: ## Create EKS cluster
 	$(call log_info,"Creating EKS cluster: $(CLUSTER_NAME)")
 	@if aws eks describe-cluster --name $(CLUSTER_NAME) --region $(REGION) >/dev/null 2>&1; then \
-		$(call log_warn,"Cluster $(CLUSTER_NAME) already exists"); \
+		echo "$(YELLOW)[WARN]$(RESET) Cluster $(CLUSTER_NAME) already exists"; \
 	else \
 		SUBNET_IDS=$$(aws ec2 describe-subnets --filters "Name=default-for-az,Values=true" --query 'Subnets[].SubnetId' --output text --region $(REGION) | tr '\t' ','); \
-		$(call log_info,"Using subnets: $$SUBNET_IDS"); \
+		echo "$(BLUE)[INFO]$(RESET) Using subnets: $$SUBNET_IDS"; \
 		aws eks create-cluster \
 			--name $(CLUSTER_NAME) \
 			--role-arn $$(aws iam get-role --role-name $(CLUSTER_ROLE_NAME) --query 'Role.Arn' --output text) \
 			--resources-vpc-config subnetIds=$$SUBNET_IDS \
 			--region $(REGION) \
-			$(AWS_OUTPUT) || { $(call log_error,"Cluster creation failed"); exit 1; }; \
-		$(call log_info,"Waiting for cluster to become active (this may take 10-15 minutes)..."); \
-		aws eks wait cluster-active --name $(CLUSTER_NAME) --region $(REGION) || { $(call log_error,"Cluster failed to become active"); exit 1; }; \
+			$(AWS_OUTPUT) || { echo "$(RED)[ERROR]$(RESET) Cluster creation failed"; exit 1; }; \
+		echo "$(BLUE)[INFO]$(RESET) Waiting for cluster to become active (this may take 10-15 minutes)..."; \
+		aws eks wait cluster-active --name $(CLUSTER_NAME) --region $(REGION) || { echo "$(RED)[ERROR]$(RESET) Cluster failed to become active"; exit 1; }; \
 	fi
 	$(call log_success,"EKS cluster ready")
 
@@ -194,17 +194,17 @@ create-oidc-provider: ## Create OIDC provider for IRSA authentication
 	$(call log_info,"Setting up OIDC provider for IRSA...")
 	@OIDC_URL=$$(aws eks describe-cluster --name $(CLUSTER_NAME) --region $(REGION) --query 'cluster.identity.oidc.issuer' --output text); \
 	OIDC_ID=$$(echo $$OIDC_URL | cut -d'/' -f5); \
-	$(call log_info,"OIDC URL: $$OIDC_URL"); \
-	$(call log_info,"OIDC ID: $$OIDC_ID"); \
+	echo "$(BLUE)[INFO]$(RESET) OIDC URL: $$OIDC_URL"; \
+	echo "$(BLUE)[INFO]$(RESET) OIDC ID: $$OIDC_ID"; \
 	aws iam create-open-id-connect-provider \
 		--url $$OIDC_URL \
 		--client-id-list sts.amazonaws.com \
 		--thumbprint-list 9e99a48a9960b14926bb7f3b02e22da2b0ab7280 \
-		--output text > /dev/null 2>&1 || $(call log_warn,"OIDC provider already exists"); \
-	$(call log_info,"Updating EBS CSI role trust policy..."); \
+		--output text > /dev/null 2>&1 || echo "$(YELLOW)[WARN]$(RESET) OIDC provider already exists"; \
+	echo "$(BLUE)[INFO]$(RESET) Updating EBS CSI role trust policy..."; \
 	ACCOUNT_ID=$$(aws sts get-caller-identity --query 'Account' --output text); \
 	sed "s/YOUR_ACCOUNT_ID/$$ACCOUNT_ID/g; s/YOUR_OIDC_ID/$$OIDC_ID/g; s/REGION/$(REGION)/g" eks-ebs-csi-role-trust.yaml > eks-ebs-csi-role-trust.yaml.personal; \
-	$(call log_info,"Recreating EBS CSI role with correct OIDC provider..."); \
+	echo "$(BLUE)[INFO]$(RESET) Recreating EBS CSI role with correct OIDC provider..."; \
 	aws iam detach-role-policy --role-name $(EBS_CSI_ROLE_NAME) --policy-arn $(EBS_CSI_POLICY) 2>/dev/null || true; \
 	aws iam delete-role --role-name $(EBS_CSI_ROLE_NAME) 2>/dev/null || true; \
 	aws iam create-role --role-name $(EBS_CSI_ROLE_NAME) --assume-role-policy-document file://eks-ebs-csi-role-trust.yaml.personal $(AWS_OUTPUT); \
@@ -214,7 +214,7 @@ create-oidc-provider: ## Create OIDC provider for IRSA authentication
 create-nodegroup: ## Create EKS node group
 	$(call log_info,"Creating node group: $(CLUSTER_NAME)-nodes")
 	@if aws eks describe-nodegroup --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) >/dev/null 2>&1; then \
-		$(call log_warn,"Node group $(CLUSTER_NAME)-nodes already exists"); \
+		echo "$(YELLOW)[WARN]$(RESET) Node group $(CLUSTER_NAME)-nodes already exists"; \
 	else \
 		aws eks create-nodegroup \
 			--cluster-name $(CLUSTER_NAME) \
@@ -224,52 +224,52 @@ create-nodegroup: ## Create EKS node group
 			--instance-types $(INSTANCE_TYPE) \
 			--scaling-config minSize=1,maxSize=10,desiredSize=$(NODE_COUNT) \
 			--region $(REGION) \
-			$(AWS_OUTPUT) || { $(call log_error,"Node group creation failed"); exit 1; }; \
-		$(call log_info,"Waiting for node group to become active (this may take 5-10 minutes)..."); \
-		aws eks wait nodegroup-active --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) || { $(call log_error,"Node group failed to become active"); exit 1; }; \
+			$(AWS_OUTPUT) || { echo "$(RED)[ERROR]$(RESET) Node group creation failed"; exit 1; }; \
+		echo "$(BLUE)[INFO]$(RESET) Waiting for node group to become active (this may take 5-10 minutes)..."; \
+		aws eks wait nodegroup-active --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) || { echo "$(RED)[ERROR]$(RESET) Node group failed to become active"; exit 1; }; \
 	fi
 	$(call log_success,"Node group ready")
 
 install-addons: ## Install AWS addons (VPC CNI and EBS CSI driver)
 	$(call log_info,"Installing AWS addons...")
 	@$(call log_info,"Installing VPC CNI addon...")
-	@aws eks create-addon --cluster-name $(CLUSTER_NAME) --addon-name vpc-cni --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"VPC CNI addon already exists")
+	@aws eks create-addon --cluster-name $(CLUSTER_NAME) --addon-name vpc-cni --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) VPC CNI addon already exists"
 	@$(call log_info,"Installing EBS CSI driver addon...")
 	@aws eks create-addon --cluster-name $(CLUSTER_NAME) --addon-name aws-ebs-csi-driver \
 		--service-account-role-arn $$(aws iam get-role --role-name $(EBS_CSI_ROLE_NAME) --query 'Role.Arn' --output text) \
-		--region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"EBS CSI addon already exists")
+		--region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) EBS CSI addon already exists"
 	$(call log_success,"AWS addons installed")
 
 install-nsm: ## Install Network Service Mesh components
 	$(call log_info,"Installing Network Service Mesh (NSM)...")
 	@$(call log_info,"Installing Spire (SPIFFE identity framework)...")
-	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/spire/single_cluster?ref=$(NSM_VERSION) || { $(call log_error,"Spire installation failed"); exit 1; }
+	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/spire/single_cluster?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) Spire installation failed"; exit 1; }
 	@$(call log_info,"Waiting for Spire pods to be ready...")
-	@kubectl wait -n spire --timeout=4m --for=condition=ready pod -l app=spire-server || { $(call log_error,"Spire server failed to start"); exit 1; }
-	@kubectl wait -n spire --timeout=1m --for=condition=ready pod -l app=spire-agent || { $(call log_error,"Spire agent failed to start"); exit 1; }
+	@kubectl wait -n spire --timeout=4m --for=condition=ready pod -l app=spire-server || { echo "$(RED)[ERROR]$(RESET) Spire server failed to start"; exit 1; }
+	@kubectl wait -n spire --timeout=1m --for=condition=ready pod -l app=spire-agent || { echo "$(RED)[ERROR]$(RESET) Spire agent failed to start"; exit 1; }
 	@$(call log_info,"Applying ClusterSPIFFEID configurations...")
-	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/single_cluster/clusterspiffeid-template.yaml || { $(call log_error,"ClusterSPIFFEID configuration failed"); exit 1; }
-	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/base/clusterspiffeid-webhook-template.yaml || { $(call log_error,"ClusterSPIFFEID webhook configuration failed"); exit 1; }
+	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/single_cluster/clusterspiffeid-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID configuration failed"; exit 1; }
+	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/base/clusterspiffeid-webhook-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID webhook configuration failed"; exit 1; }
 	@$(call log_info,"Installing Network Service Mesh components...")
-	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/basic?ref=$(NSM_VERSION) || { $(call log_error,"NSM installation failed"); exit 1; }
-	@kubectl wait -n nsm-system --for=condition=ready --timeout=3m pod -l app=admission-webhook-k8s || { $(call log_error,"NSM admission webhook failed to start"); exit 1; }
+	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/basic?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) NSM installation failed"; exit 1; }
+	@kubectl wait -n nsm-system --for=condition=ready --timeout=3m pod -l app=admission-webhook-k8s || { echo "$(RED)[ERROR]$(RESET) NSM admission webhook failed to start"; exit 1; }
 	$(call log_success,"Network Service Mesh installed successfully")
 
 setup-storage: ## Configure kubeconfig and default storage class
 	$(call log_info,"Configuring kubeconfig and storage...")
-	@aws eks update-kubeconfig --region $(REGION) --name $(CLUSTER_NAME) || { $(call log_error,"Failed to update kubeconfig"); exit 1; }
-	@kubectl patch storageclass gp2 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}' 2>/dev/null || $(call log_warn,"Failed to set default storage class")
+	@aws eks update-kubeconfig --region $(REGION) --name $(CLUSTER_NAME) || { echo "$(RED)[ERROR]$(RESET) Failed to update kubeconfig"; exit 1; }
+	@kubectl patch storageclass gp2 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}' 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Failed to set default storage class"
 	$(call log_success,"Configuration completed")
 
 clean-nsm: ## Clean up NSM resources only
 	$(call log_info,"Cleaning up NSM resources...")
 	@$(call log_info,"Removing NSM CRDs and webhooks...")
-	@kubectl delete crd clusterspiffeids.spire.spiffe.io 2>/dev/null || $(call log_warn,"CRD clusterspiffeids.spire.spiffe.io not found")
-	@kubectl delete crd clusterfederatedtrustdomains.spire.spiffe.io 2>/dev/null || $(call log_warn,"CRD clusterfederatedtrustdomains.spire.spiffe.io not found")
-	@kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/spire-controller-manager-webhook 2>/dev/null || $(call log_warn,"Spire webhook not found")
-	@kubectl delete ns spire 2>/dev/null || $(call log_warn,"Spire namespace not found")
-	@kubectl delete mutatingwebhookconfiguration nsm-mutating-webhook 2>/dev/null || $(call log_warn,"NSM webhook not found")
-	@kubectl delete ns nsm-system 2>/dev/null || $(call log_warn,"NSM namespace not found")
+	@kubectl delete crd clusterspiffeids.spire.spiffe.io 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) CRD clusterspiffeids.spire.spiffe.io not found"
+	@kubectl delete crd clusterfederatedtrustdomains.spire.spiffe.io 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) CRD clusterfederatedtrustdomains.spire.spiffe.io not found"
+	@kubectl delete validatingwebhookconfiguration.admissionregistration.k8s.io/spire-controller-manager-webhook 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Spire webhook not found"
+	@kubectl delete ns spire 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Spire namespace not found"
+	@kubectl delete mutatingwebhookconfiguration nsm-mutating-webhook 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) NSM webhook not found"
+	@kubectl delete ns nsm-system 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) NSM namespace not found"
 	$(call log_success,"NSM resources cleaned up")
 
 clean: ## Delete all resources (cluster, roles, NSM)
