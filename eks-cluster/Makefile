@@ -162,3 +162,4 @@ clean:
 	-aws iam delete-role --role-name $(NODEGROUP_ROLE_NAME)
 	-aws iam detach-role-policy --role-name $(CLUSTER_ROLE_NAME) --policy-arn $(EKS_CLUSTER_POLICY)
 	-aws iam delete-role --role-name $(CLUSTER_ROLE_NAME)
+	$(MAKE) clean-nsm
