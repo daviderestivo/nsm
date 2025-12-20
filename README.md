@@ -18,7 +18,10 @@ Network Service Mesh (NSM) is a novel approach to solving complicated L2/L3 use 
 nsm/
 ├── README.md                         # This documentation
 ├── LICENSE                           # Apache 2.0 license
+├── doc/                              # Documentation
+│   └── understanding-oidc-provider.md # OIDC provider deep dive
 ├── examples/                         # NSM examples and use cases
+│   └── firewall-service/             # NSM firewall service example
 └── eks-cluster/                      # EKS cluster setup automation
     ├── Makefile                      # Main automation script
     ├── eks-cluster-role-trust.yaml  # EKS cluster service role trust policy
@@ -233,7 +236,8 @@ make clean
 
 ## Next Steps
 
-- Explore NSM examples in the `examples/` directory
+- Explore NSM examples in the `examples/` directory:
+  - [Firewall Service](examples/firewall-service/) - Traffic filtering with NSM
 - Configure monitoring and logging for production
 - Implement GitOps workflows
 - Use private subnets for production deployments
