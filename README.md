@@ -58,15 +58,7 @@ git clone https://github.com/daviderestivo/nsm.git
 cd nsm/eks-cluster
 ```
 
-### 2. Configure EBS CSI Role (Required)
-```bash
-# Copy template and edit with your AWS account ID
-cp eks-ebs-csi-role-trust.yaml eks-ebs-csi-role-trust.yaml.personal
-# Edit eks-ebs-csi-role-trust.yaml.personal - replace YOUR_ACCOUNT_ID
-# OIDC_ID will be configured automatically during deployment
-```
-
-### 3. Deploy Everything
+### 2. Deploy Everything
 ```bash
 # Create complete NSM-enabled EKS cluster
 make all

@@ -49,13 +49,20 @@ create-cluster:
 create-oidc-provider:
 	@echo "Creating OIDC provider for EKS cluster..."
 	@OIDC_URL=$$(aws eks describe-cluster --name $(CLUSTER_NAME) --region $(REGION) --query 'cluster.identity.oidc.issuer' --output text); \
+	OIDC_ID=$$(echo $$OIDC_URL | cut -d'/' -f5); \
 	echo "OIDC URL: $$OIDC_URL"; \
+	echo "OIDC ID: $$OIDC_ID"; \
 	aws iam create-open-id-connect-provider \
 		--url $$OIDC_URL \
 		--client-id-list sts.amazonaws.com \
 		--thumbprint-list 9e99a48a9960b14926bb7f3b02e22da2b0ab7280 \
 		--output text > /dev/null 2>&1 || echo "OIDC provider already exists"
-	@echo "Recreating EBS CSI role with OIDC provider..."
+	@echo "Updating EBS CSI role trust policy with current OIDC ID..."
+	@OIDC_URL=$$(aws eks describe-cluster --name $(CLUSTER_NAME) --region $(REGION) --query 'cluster.identity.oidc.issuer' --output text); \
+	OIDC_ID=$$(echo $$OIDC_URL | cut -d'/' -f5); \
+	ACCOUNT_ID=$$(aws sts get-caller-identity --query 'Account' --output text); \
+	sed "s/YOUR_ACCOUNT_ID/$$ACCOUNT_ID/g; s/YOUR_OIDC_ID/$$OIDC_ID/g; s/REGION/$(REGION)/g" eks-ebs-csi-role-trust.yaml > eks-ebs-csi-role-trust.yaml.personal
+	@echo "Recreating EBS CSI role with correct OIDC provider..."
 	-aws iam detach-role-policy --role-name $(EBS_CSI_ROLE_NAME) --policy-arn $(EBS_CSI_POLICY)
 	-aws iam delete-role --role-name $(EBS_CSI_ROLE_NAME)
 	aws iam create-role --role-name $(EBS_CSI_ROLE_NAME) --assume-role-policy-document file://eks-ebs-csi-role-trust.yaml.personal $(AWS_OUTPUT)
