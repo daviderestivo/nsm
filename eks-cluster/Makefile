@@ -68,7 +68,7 @@ EBS_CSI_POLICY = arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
 # Common AWS CLI options
 AWS_OUTPUT = --output text > /dev/null
 
-.PHONY: help validate plan status all create-roles create-cluster create-oidc-provider create-nodegroup install-addons install-nsm setup-storage clean clean-nsm
+.PHONY: help validate plan status all create-roles create-cluster create-oidc-provider create-nodegroup install-addons install-nsm setup-kubeconfig setup-storage clean clean-nsm
 
 # Default target
 .DEFAULT_GOAL := help
@@ -154,6 +154,7 @@ all: validate ## Complete NSM-enabled EKS cluster setup
 	@$(MAKE) create-nodegroup
 	@$(MAKE) install-addons
 	@$(MAKE) install-nsm
+	@$(MAKE) setup-kubeconfig
 	@$(MAKE) setup-storage
 	$(call log_success,"Complete setup finished! Cluster $(CLUSTER_NAME) is ready.")
 
@@ -255,11 +256,15 @@ install-nsm: ## Install Network Service Mesh components
 	@kubectl wait -n nsm-system --for=condition=ready --timeout=3m pod -l app=admission-webhook-k8s || { echo "$(RED)[ERROR]$(RESET) NSM admission webhook failed to start"; exit 1; }
 	$(call log_success,"Network Service Mesh installed successfully")
 
-setup-storage: ## Configure kubeconfig and default storage class
-	$(call log_info,"Configuring kubeconfig and storage...")
+setup-kubeconfig: ## Configure kubeconfig for cluster access
+	$(call log_info,"Configuring kubeconfig...")
 	@aws eks update-kubeconfig --region $(REGION) --name $(CLUSTER_NAME) || { echo "$(RED)[ERROR]$(RESET) Failed to update kubeconfig"; exit 1; }
+	$(call log_success,"Kubeconfig configured")
+
+setup-storage: ## Configure default storage class
+	$(call log_info,"Configuring default storage class...")
 	@kubectl patch storageclass gp2 -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}' 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Failed to set default storage class"
-	$(call log_success,"Configuration completed")
+	$(call log_success,"Storage configuration completed")
 
 clean-nsm: ## Clean up NSM resources only
 	$(call log_info,"Cleaning up NSM resources...")
