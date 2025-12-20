@@ -1,4 +1,4 @@
-# Network Service Mesh on AWS EKS - Enhanced Makefile
+# Network Service Mesh on AWS EKS
 #
 # This Makefile automates the complete setup of Network Service Mesh (NSM) on Amazon EKS
 # with enhanced error handling, validation, logging, and usability features.
