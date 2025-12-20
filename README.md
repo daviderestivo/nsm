@@ -48,6 +48,9 @@ aws sts get-caller-identity
 # Check kubectl and make
 kubectl version --client
 make --version
+
+# Or use the built-in validation
+make validate
 ```
 
 ## Quick Start
@@ -58,7 +61,19 @@ git clone https://github.com/daviderestivo/nsm.git
 cd nsm/eks-cluster
 ```
 
-### 2. Deploy Everything
+### 2. Validate Prerequisites
+```bash
+# Check prerequisites and configuration
+make validate
+```
+
+### 3. Preview Deployment
+```bash
+# See what will be created (dry-run)
+make plan
+```
+
+### 4. Deploy Everything
 ```bash
 # Create complete NSM-enabled EKS cluster
 make all
@@ -71,31 +86,67 @@ make all
 
 **Custom Configuration:**
 ```bash
-make all CLUSTER_NAME=my-cluster REGION=us-west-2 NODE_COUNT=6
+make all CLUSTER_NAME=my-cluster REGION=us-west-2 NODE_COUNT=6 INSTANCE_TYPE=t3.large
 ```
 
-## Installation Steps
+### 5. Check Status
+```bash
+# View cluster status and resources
+make status
+```
+
+## Available Commands
+
+### Getting Help
+```bash
+make help                    # Show all available targets and options
+```
+
+### Validation and Planning
+```bash
+make validate               # Check prerequisites and configuration
+make plan                   # Preview what resources will be created
+make status                 # Show current cluster status
+```
+
+### Deployment
+```bash
+make all                    # Complete setup (recommended)
+make create-roles           # Create IAM roles only
+make create-cluster         # Create EKS cluster only
+make create-oidc-provider   # Create OIDC provider only
+make create-nodegroup       # Create node group only
+make install-addons         # Install AWS addons only
+make install-nsm            # Install NSM components only
+make setup-storage          # Configure storage only
+```
+
+### Cleanup
+```bash
+make clean-nsm              # Remove NSM components only
+make clean                  # Delete everything (with confirmation)
+```
+
+### Configuration Options
+```bash
+CLUSTER_NAME=my-cluster     # Cluster name (default: nsm-test)
+REGION=us-west-2           # AWS region (default: eu-central-2)
+NODE_COUNT=6               # Number of nodes (default: 4)
+INSTANCE_TYPE=t3.large     # Instance type (default: t3.medium)
+NSM_VERSION=v1.15.0        # NSM version (default: v1.14.0)
+```
+
+## Installation Process
 
 The `make all` command performs these steps:
-1. **Create IAM roles** - EKS cluster, node group, and EBS CSI driver roles
-2. **Create EKS cluster** - Kubernetes control plane (~10-15 minutes)
-3. **Create OIDC provider** - For service account authentication (IRSA)
-4. **Create node group** - Worker nodes with auto-scaling
-5. **Install AWS addons** - VPC CNI and EBS CSI driver
-6. **Install NSM** - Spire (SPIFFE) and Network Service Mesh components
-7. **Configure storage** - Default storage class and kubeconfig
-
-### Manual Step-by-Step
-For granular control, run individual steps:
-```bash
-make create-roles
-make create-cluster
-make create-oidc-provider
-make create-nodegroup
-make install-addons
-make install-nsm
-make setup-storage
-```
+1. **Validate prerequisites** - Check AWS CLI, kubectl, credentials, and region
+2. **Create IAM roles** - EKS cluster, node group, and EBS CSI driver roles
+3. **Create EKS cluster** - Kubernetes control plane (~10-15 minutes)
+4. **Create OIDC provider** - For service account authentication (IRSA)
+5. **Create node group** - Worker nodes with auto-scaling
+6. **Install AWS addons** - VPC CNI and EBS CSI driver
+7. **Install NSM** - Spire (SPIFFE) and Network Service Mesh components
+8. **Configure storage** - Default storage class and kubeconfig
 
 ## Verification
 
