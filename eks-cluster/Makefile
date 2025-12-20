@@ -19,9 +19,9 @@
 #   make create-oidc-provider   # Setup OIDC for IRSA
 #   make create-nodegroup       # Create worker nodes
 #   make install-addons         # Install AWS addons
-#   make install-nsm            # Install NSM components
 #   make setup-kubeconfig       # Configure kubectl access
 #   make setup-storage          # Setup default storage
+#   make install-nsm            # Install NSM components
 #
 # For detailed help: make help
 
