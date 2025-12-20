@@ -258,15 +258,15 @@ install-addons: ## Install AWS addons (VPC CNI and EBS CSI driver)
 install-nsm: ## Install Network Service Mesh components
 	$(call log_info,"Installing Network Service Mesh...")
 	@$(call log_info,"Installing Spire SPIFFE identity framework...")
-	@kubectl apply --server-side --force-conflicts --validate=false -k https://github.com/networkservicemesh/deployments-k8s/examples/spire/single_cluster?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) Spire installation failed"; exit 1; }
+	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/spire/single_cluster?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) Spire installation failed"; exit 1; }
 	@$(call log_info,"Waiting for Spire pods to be ready...")
 	@kubectl wait -n spire --timeout=4m --for=condition=ready pod -l app=spire-server || { echo "$(RED)[ERROR]$(RESET) Spire server failed to start"; exit 1; }
 	@kubectl wait -n spire --timeout=1m --for=condition=ready pod -l app=spire-agent || { echo "$(RED)[ERROR]$(RESET) Spire agent failed to start"; exit 1; }
 	@$(call log_info,"Applying ClusterSPIFFEID configurations...")
-	@kubectl apply --server-side --force-conflicts --validate=false -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/single_cluster/clusterspiffeid-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID configuration failed"; exit 1; }
-	@kubectl apply --server-side --force-conflicts --validate=false -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/base/clusterspiffeid-webhook-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID webhook configuration failed"; exit 1; }
+	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/single_cluster/clusterspiffeid-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID configuration failed"; exit 1; }
+	@kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/$(NSM_VERSION)/examples/spire/base/clusterspiffeid-webhook-template.yaml || { echo "$(RED)[ERROR]$(RESET) ClusterSPIFFEID webhook configuration failed"; exit 1; }
 	@$(call log_info,"Installing Network Service Mesh components...")
-	@kubectl apply --server-side --force-conflicts --validate=false -k https://github.com/networkservicemesh/deployments-k8s/examples/basic?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) NSM installation failed"; exit 1; }
+	@kubectl apply -k https://github.com/networkservicemesh/deployments-k8s/examples/basic?ref=$(NSM_VERSION) || { echo "$(RED)[ERROR]$(RESET) NSM installation failed"; exit 1; }
 	@kubectl wait -n nsm-system --for=condition=ready --timeout=3m pod -l app=admission-webhook-k8s || { echo "$(RED)[ERROR]$(RESET) NSM admission webhook failed to start"; exit 1; }
 	$(call log_success,"Network Service Mesh installed successfully")
 
