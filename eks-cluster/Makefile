@@ -3,13 +3,27 @@
 # This Makefile automates the complete setup of Network Service Mesh (NSM) on Amazon EKS
 # with enhanced error handling, validation, logging, and usability features.
 #
-# Usage:
-#   make help                   # Show detailed help
-#   make all                    # Complete setup (recommended)
-#   make plan                   # Show what would be created (dry-run)
-#   make status                 # Show current cluster status
+# Quick Start:
+#   make validate               # Check prerequisites
+#   make plan                   # Preview deployment
+#   make all                    # Deploy everything
+#
+# Management:
+#   make status                 # Show cluster status
+#   make clean-nsm              # Remove NSM only
 #   make clean                  # Delete everything
-#   make clean-nsm              # Delete NSM components only
+#
+# Individual Steps:
+#   make create-roles           # Create IAM roles
+#   make create-cluster         # Create EKS cluster
+#   make create-oidc-provider   # Setup OIDC for IRSA
+#   make create-nodegroup       # Create worker nodes
+#   make install-addons         # Install AWS addons
+#   make install-nsm            # Install NSM components
+#   make setup-kubeconfig       # Configure kubectl access
+#   make setup-storage          # Setup default storage
+#
+# For detailed help: make help
 
 # Configuration
 CLUSTER_NAME ?= nsm-test
