@@ -277,34 +277,34 @@ clean: ## Delete all resources (cluster, roles, NSM)
 	@read -p "Are you sure you want to delete cluster $(CLUSTER_NAME)? [y/N] " -n 1 -r; \
 	echo ""; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		$(call log_info,"Starting cleanup process..."); \
-		$(call log_info,"Deleting EKS addons..."); \
-		aws eks delete-addon --cluster-name $(CLUSTER_NAME) --addon-name aws-ebs-csi-driver --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"EBS CSI addon not found"); \
-		aws eks delete-addon --cluster-name $(CLUSTER_NAME) --addon-name vpc-cni --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"VPC CNI addon not found"); \
-		$(call log_info,"Deleting node group..."); \
-		aws eks delete-nodegroup --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"Node group not found"); \
+		echo "$(BLUE)[INFO]$(RESET) Starting cleanup process..."; \
+		echo "$(BLUE)[INFO]$(RESET) Deleting EKS addons..."; \
+		aws eks delete-addon --cluster-name $(CLUSTER_NAME) --addon-name aws-ebs-csi-driver --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) EBS CSI addon not found"; \
+		aws eks delete-addon --cluster-name $(CLUSTER_NAME) --addon-name vpc-cni --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) VPC CNI addon not found"; \
+		echo "$(BLUE)[INFO]$(RESET) Deleting node group..."; \
+		aws eks delete-nodegroup --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Node group not found"; \
 		if aws eks describe-nodegroup --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION) >/dev/null 2>&1; then \
-			$(call log_info,"Waiting for node group deletion..."); \
+			echo "$(BLUE)[INFO]$(RESET) Waiting for node group deletion..."; \
 			aws eks wait nodegroup-deleted --cluster-name $(CLUSTER_NAME) --nodegroup-name $(CLUSTER_NAME)-nodes --region $(REGION); \
 		fi; \
-		$(call log_info,"Deleting EKS cluster..."); \
-		aws eks delete-cluster --name $(CLUSTER_NAME) --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || $(call log_warn,"Cluster not found"); \
+		echo "$(BLUE)[INFO]$(RESET) Deleting EKS cluster..."; \
+		aws eks delete-cluster --name $(CLUSTER_NAME) --region $(REGION) $(AWS_OUTPUT) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Cluster not found"; \
 		if aws eks describe-cluster --name $(CLUSTER_NAME) --region $(REGION) >/dev/null 2>&1; then \
-			$(call log_info,"Waiting for cluster deletion..."); \
+			echo "$(BLUE)[INFO]$(RESET) Waiting for cluster deletion..."; \
 			aws eks wait cluster-deleted --name $(CLUSTER_NAME) --region $(REGION); \
 		fi; \
-		$(call log_info,"Deleting IAM roles..."); \
+		echo "$(BLUE)[INFO]$(RESET) Deleting IAM roles..."; \
 		aws iam detach-role-policy --role-name $(EBS_CSI_ROLE_NAME) --policy-arn $(EBS_CSI_POLICY) 2>/dev/null || true; \
-		aws iam delete-role --role-name $(EBS_CSI_ROLE_NAME) 2>/dev/null || $(call log_warn,"EBS CSI role not found"); \
+		aws iam delete-role --role-name $(EBS_CSI_ROLE_NAME) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) EBS CSI role not found"; \
 		aws iam detach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(EKS_WORKER_NODE_POLICY) 2>/dev/null || true; \
 		aws iam detach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(EKS_CNI_POLICY) 2>/dev/null || true; \
 		aws iam detach-role-policy --role-name $(NODEGROUP_ROLE_NAME) --policy-arn $(ECR_READ_ONLY_POLICY) 2>/dev/null || true; \
-		aws iam delete-role --role-name $(NODEGROUP_ROLE_NAME) 2>/dev/null || $(call log_warn,"Node group role not found"); \
+		aws iam delete-role --role-name $(NODEGROUP_ROLE_NAME) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Node group role not found"; \
 		aws iam detach-role-policy --role-name $(CLUSTER_ROLE_NAME) --policy-arn $(EKS_CLUSTER_POLICY) 2>/dev/null || true; \
-		aws iam delete-role --role-name $(CLUSTER_ROLE_NAME) 2>/dev/null || $(call log_warn,"Cluster role not found"); \
-		$(call log_info,"Cleaning up generated files..."); \
+		aws iam delete-role --role-name $(CLUSTER_ROLE_NAME) 2>/dev/null || echo "$(YELLOW)[WARN]$(RESET) Cluster role not found"; \
+		echo "$(BLUE)[INFO]$(RESET) Cleaning up generated files..."; \
 		rm -f eks-ebs-csi-role-trust.yaml.personal; \
-		$(call log_success,"All resources have been deleted"); \
+		echo "$(GREEN)[SUCCESS]$(RESET) All resources have been deleted"; \
 	else \
-		$(call log_info,"Cleanup cancelled"); \
+		echo "$(BLUE)[INFO]$(RESET) Cleanup cancelled"; \
 	fi
