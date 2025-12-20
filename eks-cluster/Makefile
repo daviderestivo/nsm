@@ -1,3 +1,29 @@
+# Network Service Mesh on AWS EKS - Makefile
+#
+# This Makefile automates the complete setup of Network Service Mesh (NSM) on Amazon EKS
+# including infrastructure provisioning, OIDC provider configuration, and NSM installation.
+#
+# OIDC Provider Explanation:
+# ========================
+# OIDC (OpenID Connect) is an authentication protocol that allows AWS to trust
+# identity tokens issued by EKS clusters. This enables IRSA (IAM Roles for Service Accounts):
+#
+# 1. EKS cluster issues JWT tokens to pods with service accounts
+# 2. AWS OIDC provider validates these tokens 
+# 3. IAM roles trust the OIDC provider and allow token-based authentication
+# 4. Pods can access AWS services without storing AWS credentials
+#
+# Each EKS cluster gets a unique OIDC provider ID (e.g., B86020E942A28CCC8FDC577C0F65D595)
+# The EBS CSI driver uses this mechanism to authenticate with AWS and manage EBS volumes.
+#
+# Usage:
+#   make all                    # Complete setup (recommended)
+#   make create-roles           # Create IAM roles only
+#   make create-cluster         # Create EKS cluster only
+#   make create-oidc-provider   # Create OIDC provider and configure EBS CSI role
+#   make clean                  # Delete everything
+#   make clean-nsm              # Delete NSM components only
+
 CLUSTER_NAME ?= nsm-test
 REGION ?= eu-central-2
 NODE_COUNT ?= 4
