@@ -143,7 +143,7 @@ status: ## Show current cluster status
 		echo "$(GREEN)Addons:$(RESET)"; \
 		aws eks list-addons --cluster-name $(CLUSTER_NAME) --region $(REGION) --output table 2>/dev/null || echo "No addons found"; \
 	else \
-		$(call log_warn,"Cluster $(CLUSTER_NAME) not found in region $(REGION)"); \
+		echo "$(YELLOW)[WARN]$(RESET) Cluster $(CLUSTER_NAME) not found in region $(REGION)"; \
 	fi
 
 all: validate ## Complete NSM-enabled EKS cluster setup
