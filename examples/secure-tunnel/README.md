@@ -10,6 +10,19 @@ HTTP server accessible only through encrypted NSM connection.
 
 ## The Setup
 
+```
+┌─────────────────┐  Encrypted NSM   ┌─────────────────┐
+│     Client      │◄────Tunnel──────►│   Web Server    │
+│ Alpine + curl   │  172.16.4.0/24   │     Nginx       │
+│ 172.16.4.10     │                  │ 172.16.4.20     │
+└─────────────────┘                  └─────────────────┘
+         │                                    │
+         │ HTTP Request                       │ HTTP Response
+         │ GET /                              │ 200 OK
+         └────────────────────────────────────┘
+                    Secure & Isolated
+```
+
 - **Client**: Alpine pod with curl (172.16.4.10)
 - **Web Server**: Nginx serving HTTP (172.16.4.20)
 - **NSM Tunnel**: Encrypted connection between them

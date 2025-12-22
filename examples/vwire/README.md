@@ -10,14 +10,28 @@ Connect two clients directly - like a virtual ethernet cable.
 
 ## The Setup
 
+```
+┌─────────────────┐                   ┌─────────────────┐
+│    Client A     │                   │    Client B     │
+│  Alpine Pod     │                   │  Alpine Pod     │
+│ 172.16.2.1      │                   │ 172.16.2.2      │
+└─────────┬───────┘                   └─────────┬───────┘
+          │                                     │
+          │            NSM Network              │
+          │         172.16.2.0/24               │
+          │                                     │
+          └──────────┬─────────────────┬────────┘
+                     │                 │
+              ┌──────▼─────────────────▼──────┐
+              │      Virtual Wire NSE         │
+              │    (L2 Bridge Service)        │
+              └───────────────────────────────┘
+```
+
 - **Client A**: Alpine pod at 172.16.2.1
 - **Client B**: Alpine pod at 172.16.2.2  
 - **Virtual Wire**: NSE that bridges them together
 - **Result**: Clients talk directly to each other
-
-```
-Client A ←→ Virtual Wire ←→ Client B
-```
 
 ## Deploy & Test
 

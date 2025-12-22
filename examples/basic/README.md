@@ -10,6 +10,14 @@ Your first NSM connection - client to server communication.
 
 ## The Setup
 
+```
+┌─────────────────┐    NSM Network    ┌─────────────────┐
+│     Client      │◄─────────────────►│     Server      │
+│  Alpine Pod     │   172.16.1.100/31 │   NSE (ICMP)    │
+│ 172.16.1.101    │                   │ 172.16.1.100    │
+└─────────────────┘                   └─────────────────┘
+```
+
 - **Client**: Alpine pod that requests network service
 - **Server**: NSE (Network Service Endpoint) that provides service
 - **Connection**: Direct kernel-to-kernel link

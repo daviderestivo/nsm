@@ -10,6 +10,26 @@ HTTP API with role-based access control using Open Policy Agent.
 
 ## The Setup
 
+```
+┌─────────────────┐    NSM Network    ┌─────────────────┐
+│     Client      │◄─────────────────►│   Web Server    │
+│ Alpine + curl   │   172.16.5.0/24   │ Nginx + OPA     │
+│ 172.16.5.10     │                   │ 172.16.5.20     │
+└─────────────────┘                   └─────────┬───────┘
+         │                                      │
+         │ HTTP + X-User: alice                 │
+         └──────────────────────────────────────┘
+                                                │
+                                         ┌──────▼──────┐
+                                         │ OPA Policy  │
+                                         │ Engine      │
+                                         │             │
+                                         │ alice: user │
+                                         │ bob: mgr    │
+                                         │ david: hr   │
+                                         └─────────────┘
+```
+
 - **Client**: Alpine pod with curl (172.16.5.10)
 - **Web Server**: Nginx with OPA sidecar (172.16.5.20)
 - **Policy Engine**: OPA evaluates access requests

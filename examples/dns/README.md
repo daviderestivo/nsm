@@ -10,6 +10,21 @@ Secure DNS server accessible only through NSM.
 
 ## The Setup
 
+```
+┌─────────────────┐    NSM Network    ┌─────────────────┐
+│   DNS Client    │◄─────────────────►│   DNS Server    │
+│  Alpine + dig   │   172.16.3.0/24   │   CoreDNS       │
+│ 172.16.3.10     │                   │ 172.16.3.100    │
+└─────────────────┘                   └─────────────────┘
+                                              │
+                                              ▼
+                                      ┌───────────────┐
+                                      │ Custom Zones  │
+                                      │ test.local    │
+                                      │ server.local  │
+                                      └───────────────┘
+```
+
 - **DNS Client**: Pod with DNS tools (172.16.3.10)
 - **DNS Server**: CoreDNS with custom zones (172.16.3.100)
 - **NSM Network**: Only these pods can communicate
