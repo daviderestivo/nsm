@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-config
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        server {
+            listen 80;
+            
+            location /public/ {
+                auth_request /auth;
+                proxy_pass http://127.0.0.1:8080;
+            }
+            
+            location /admin/ {
+                auth_request /auth;
+                proxy_pass http://127.0.0.1:8080;
+            }
+            
+            location /hr/ {
+                auth_request /auth;
+                proxy_pass http://127.0.0.1:8080;
+            }
+            
+            location = /auth {
+                internal;
+                proxy_pass http://127.0.0.1:8181/v1/data/httpapi/authz;
+                proxy_pass_request_body off;
+                proxy_set_header Content-Length "";
+                proxy_set_header X-Original-URI $request_uri;
+                proxy_set_header X-Original-Method $request_method;
+                proxy_set_header X-User $remote_user;
+            }
+        }
+    }

@@ -21,7 +21,7 @@ kubectl wait --for=condition=ready --timeout=2m pod -l app=alpine -n ns-kernel2k
 kubectl wait --for=condition=ready --timeout=2m pod -l app=nse-kernel -n ns-kernel2kernel
 
 echo "Testing connectivity..."
-kubectl exec pods/alpine -n ns-kernel2kernel -- ping -c 4 172.16.1.100
+kubectl exec alpine -n ns-kernel2kernel -- ping -c 4 172.16.1.100
 
 echo "Basic NSM example deployed successfully!"
-echo "To test manually: kubectl exec pods/alpine -n ns-kernel2kernel -- ping -c 4 172.16.1.100"
+echo "To test manually: kubectl exec alpine -n ns-kernel2kernel -- ping -c 4 172.16.1.100"

@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-a
+  labels:
+    app: client-a
+  annotations:
+    networkservicemesh.io: kernel://vwire/nsm-1?ip=172.16.2.1/24
+spec:
+  containers:
+  - name: alpine
+    image: alpine:3.15.0
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c", "trap : TERM INT; sleep infinity & wait"]

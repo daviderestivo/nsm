@@ -1,0 +1,7 @@
+---
+apiVersion: networkservicemesh.io/v1
+kind: NetworkService
+metadata:
+  name: opa-service
+spec:
+  payload: IP

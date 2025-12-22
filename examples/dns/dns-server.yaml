@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dns-server
+  labels:
+    app: dns-server
+  annotations:
+    networkservicemesh.io: kernel://dns-service/nsm-1?ip=172.16.3.100/24
+spec:
+  containers:
+  - name: coredns
+    image: coredns/coredns:1.8.4
+    args: ["-conf", "/etc/coredns/Corefile"]
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/coredns
+    ports:
+    - containerPort: 53
+      name: dns
+      protocol: UDP
+    - containerPort: 53
+      name: dns-tcp
+      protocol: TCP
+  volumes:
+  - name: config-volume
+    configMap:
+      name: dns-config

@@ -237,7 +237,11 @@ make clean
 ## Next Steps
 
 - Explore NSM examples in the `examples/` directory:
-  - [Firewall Service](examples/firewall-service/) - Traffic filtering with NSM
+  - [Basic](examples/basic/) - Simple kernel-to-kernel connectivity
+  - [Virtual Wire](examples/vwire/) - L2 connectivity between two clients
+  - [DNS Service](examples/dns/) - Secure DNS resolution through NSM
+  - [Secure Tunnel](examples/secure-tunnel/) - Encrypted tunnel connectivity
+  - [OPA Policy](examples/opa-policy/) - HTTP authorization with Open Policy Agent
 - Configure monitoring and logging for production
 - Implement GitOps workflows
 - Use private subnets for production deployments

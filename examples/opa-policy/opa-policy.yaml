@@ -1,0 +1,41 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-policy
+data:
+  policy.rego: |
+    package httpapi.authz
+
+    import rego.v1
+
+    # User database
+    users := {
+        "alice": {"role": "user"},
+        "bob": {"role": "manager"},
+        "charlie": {"role": "user"},
+        "david": {"role": "hr"}
+    }
+
+    default allow := false
+
+    # Allow public access for all users
+    allow if {
+        input.method == "GET"
+        startswith(input.path, "/public/")
+        input.user in users
+    }
+
+    # Allow admin access for managers only
+    allow if {
+        input.method == "GET"
+        startswith(input.path, "/admin/")
+        users[input.user].role == "manager"
+    }
+
+    # Allow HR access for HR role only
+    allow if {
+        input.method == "GET"
+        startswith(input.path, "/hr/")
+        users[input.user].role == "hr"
+    }
