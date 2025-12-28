@@ -13,6 +13,7 @@ This document provides a comprehensive overview of Network Service Mesh (NSM) co
 - [NSM vs Traditional Service Mesh](#nsm-vs-traditional-service-mesh)
 - [Zero Trust and Security](#zero-trust-and-security)
 - [Use Cases](#use-cases)
+- [Acronyms](#acronyms)
 - [Summary](#summary)
 
 ## The Problem NSM Solves
@@ -511,6 +512,19 @@ graph TB
 - **Network Function Virtualization**: Chained network services
 - **Development/Testing**: Isolated network environments
 - **Microservice Security**: Per-service network policies
+
+## Acronyms
+
+| Acronym | Full Form | Description |
+|---------|-----------|-------------|
+| **NSM** | Network Service Mesh | Cloud-native networking solution for secure workload connectivity |
+| **NSC** | Network Service Client | Workload that consumes network services |
+| **NSE** | Network Service Endpoint | Component that provides network services |
+| **NSR** | Network Service Registries | Storage and discovery system for network services and endpoints |
+| **NSMgr** | Network Service Manager | Core orchestration component that manages connections |
+| **SPIFFE** | Secure Production Identity Framework for Everyone | Identity framework for workload authentication |
+| **vWire** | Virtual Wire | Secure connection between client and endpoint |
+| **vL3** | Virtual Layer 3 | Virtual L3 network service providing IP connectivity |
 
 ## Summary
 
