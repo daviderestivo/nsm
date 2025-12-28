@@ -7,6 +7,7 @@ This document provides a comprehensive overview of Network Service Mesh (NSM) co
 - [The Problem NSM Solves](#the-problem-nsm-solves)
 - [NSM Solution Overview](#nsm-solution-overview)
 - [Core Architecture](#core-architecture)
+- [Inter-Domain Service Discovery](#inter-domain-service-discovery)
 - [Key Components](#key-components)
 - [NSM in Kubernetes](#nsm-in-kubernetes)
 - [Advanced Features](#advanced-features)
@@ -226,6 +227,81 @@ Network Services can be scoped to domains using `@domain` syntax:
 - `service-mesh@finance.example.com`
 - Enables internet-scale service discovery
 - Supports floating domains not tied to specific runtime domains
+
+## Inter-Domain Service Discovery
+
+NSM enables service discovery across organizational boundaries using DNS-based registry location. This mechanism allows NSM to scale to "internet scale" by leveraging existing DNS infrastructure.
+
+### How Registry Discovery Works
+
+When a client requests a service from a different domain, NSM uses the following process:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant DNS as DNS System
+    participant Registry as Remote Registry
+    participant NSE as Network Service Endpoint
+    
+    Client->>DNS: 1. SRV lookup for _nsm-registry._tcp.finance.example.com
+    DNS->>Client: 2. Returns registry1.finance.example.com:8080
+    Client->>Registry: 3. Query for secure-tunnel@finance.example.com
+    Registry->>Client: 4. Returns available endpoints
+    Client->>NSE: 5. Establish connection to endpoint
+```
+
+### Key Concepts
+
+#### **Registry Domain**
+- NSM allows multiple independent registry domains (like `finance.example.com`, `marketing.example.com`)
+- Each domain has its own Registry Server that stores Network Services and Endpoints
+- Think of it like different DNS zones - each manages its own namespace
+
+#### **SRV Record Lookup**
+- **SRV records** are a type of DNS record that specifies the hostname and port for specific services
+- Format: `_service._protocol.domain.com`
+- Example: `_nsm-registry._tcp.finance.example.com` might point to `registry1.finance.example.com:8080`
+
+#### **Discovery Process**
+1. **Client wants service**: A client requests `secure-tunnel@finance.example.com`
+2. **Domain extraction**: NSM extracts the domain part: `finance.example.com`
+3. **SRV lookup**: NSM does a DNS SRV query for `_nsm-registry._tcp.finance.example.com`
+4. **Registry location**: DNS returns the actual registry server address and port
+5. **Service discovery**: NSM contacts that registry to find the service
+
+### Internet Scale Benefits
+
+**Decentralized Architecture**:
+- No single registry bottleneck
+- Each organization manages its own services
+- Fault tolerance through distributed registries
+
+**DNS Infrastructure Leverage**:
+- Uses existing global DNS system
+- Inherits DNS caching and performance optimizations
+- Standard internet protocols for discovery
+
+**Cross-Organization Collaboration**:
+- Companies can expose services to partners
+- Secure service sharing across organizational boundaries
+- Policy-controlled access to external services
+
+### Real-World Example
+
+```
+Company A Domain: finance.companyA.com
+Company B Domain: hr.companyB.com
+
+Scenario: Company A needs HR services from Company B
+
+1. Client at Company A requests: hr-service@hr.companyB.com
+2. NSM queries DNS: _nsm-registry._tcp.hr.companyB.com
+3. DNS returns: hr-registry.companyB.com:8080
+4. NSM contacts Company B's registry
+5. Secure connection established between companies
+```
+
+This flexibility allows NSM to adapt to different organizational requirements while maintaining the core capability of cross-domain service connectivity.
 
 ## Key Components
 
