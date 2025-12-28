@@ -1,6 +1,6 @@
 # Network Service Mesh Concepts
 
-This document provides a comprehensive overview of Network Service Mesh (NSM) concepts, architecture, and components.
+This document provides a comprehensive overview of Network Service Mesh (NSM) concepts, architecture, and components. For practical deployment instructions, see the [main README](../README.md).
 
 ## Table of Contents
 
@@ -12,6 +12,8 @@ This document provides a comprehensive overview of Network Service Mesh (NSM) co
 - [Advanced Features](#advanced-features)
 - [NSM vs Traditional Service Mesh](#nsm-vs-traditional-service-mesh)
 - [Zero Trust and Security](#zero-trust-and-security)
+- [Use Cases](#use-cases)
+- [Summary](#summary)
 
 ## The Problem NSM Solves
 
@@ -23,6 +25,21 @@ How do you enable workloads collaborating together to produce an application to 
 
 Traditionally, workloads have been constrained by their Runtime Domain (K8s, VM, or Data Center), with each domain providing exactly one Connectivity Domain. This creates strong coupling between where workloads run and how they communicate.
 
+```mermaid
+graph TB
+    subgraph "Traditional Model - Strong Coupling"
+        subgraph K8s["K8s Runtime Domain"]
+            K8sConn["K8s Connectivity Domain"]
+        end
+        subgraph VM["VM Runtime Domain"]
+            VMConn["VM Connectivity Domain"]
+        end
+        subgraph DC["DC Runtime Domain"]
+            DCConn["DC Connectivity Domain"]
+        end
+    end
+```
+
 **Key Issues**:
 - Connectivity domains are strongly coupled to runtime domains
 - Workloads can only communicate within their runtime domain
@@ -30,14 +47,68 @@ Traditionally, workloads have been constrained by their Runtime Domain (K8s, VM,
 - No granular control over which workloads can communicate
 
 **Example Scenario**: In a multi-cluster Kubernetes environment:
-- Red Pods need to communicate with each other across clusters
-- Green Pods need their own isolated communication
-- Some Pods need access to multiple networks
-- Other Pods should have no cross-cluster access
+
+```mermaid
+graph LR
+    subgraph ClusterA["Cluster A"]
+        RedA["Red Pod"]
+        GreenA["Green Pod"]
+    end
+    subgraph ClusterB["Cluster B"]
+        RedB["Red Pod"]
+        GreenB["Green Pod"]
+    end
+    
+    RedA -.->|"❌ No Connection"| RedB
+    GreenA -.->|"❌ No Connection"| GreenB
+    
+    style RedA fill:#ffcccc
+    style RedB fill:#ffcccc
+    style GreenA fill:#ccffcc
+    style GreenB fill:#ccffcc
+```
+
+Requirements:
+• Red Pods need to communicate across clusters
+• Green Pods need isolated communication
+• Some Pods need multi-network access
+• Other Pods should have no cross-cluster access
 
 ## NSM Solution Overview
 
 Network Service Mesh decouples connectivity from runtime domains, allowing individual workloads to connect securely to Network Services independent of where they run.
+
+```mermaid
+graph TB
+    subgraph NSLayer["Network Services Layer"]
+        vL3["vL3 Network Service"]
+        ServiceMesh["Service Mesh Service"]
+        SecureTunnel["Secure Tunnel Service"]
+    end
+    
+    subgraph Domains["Runtime Domains"]
+        subgraph K8s["K8s Runtime Domain"]
+            AppA["App A"]
+            AppB["App B"]
+        end
+        subgraph VM["VM Runtime Domain"]
+            AppC["App C"]
+            AppD["App D"]
+        end
+        subgraph DC["DC Runtime Domain"]
+            AppE["App E"]
+            AppF["App F"]
+        end
+    end
+    
+    NSLayer -.->|"Loose Coupling"| Domains
+    vL3 --> AppA
+    vL3 --> AppC
+    ServiceMesh --> AppB
+    ServiceMesh --> AppD
+    SecureTunnel --> AppE
+    SecureTunnel --> AppF
+```
 
 **Key Benefits**:
 - **Runtime Independence**: Works across K8s, VMs, and physical servers
@@ -69,6 +140,32 @@ vWires connect Clients to Endpoints with these guarantees:
 - Only packets from the correct source reach the destination
 - Each vWire carries traffic for exactly one Network Service
 
+```mermaid
+graph LR
+    subgraph ClientPod["Client Pod"]
+        App["Application"]
+        ClientInt["nsm-1 Interface"]
+        App --> ClientInt
+    end
+    
+    subgraph EndpointPod["Endpoint Pod"]
+        NSE["Network Service Implementation"]
+        EndpointInt["nsm-1 Interface"]
+        EndpointInt --> NSE
+    end
+    
+    ClientInt <-->|"vWire (Secure Tunnel)"| EndpointInt
+    
+    style ClientInt fill:#e1f5fe
+    style EndpointInt fill:#e8f5e8
+```
+
+Properties:
+• Bidirectional communication
+• Encrypted in transit (SPIFFE/TLS)
+• One vWire per Network Service
+• Multiple vWires per Client possible
+
 #### Endpoints (NSE - Network Service Endpoint)
 Endpoints provide Network Services to Clients. They can be:
 - Pods in the same or different K8s clusters
@@ -78,6 +175,27 @@ Endpoints provide Network Services to Clients. They can be:
 ### Network Service API
 
 The NSM API consists of three main operations:
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant NSM as NSM Manager
+    participant Endpoint
+    
+    Client->>NSM: 1. Request(NetworkService)
+    NSM->>Endpoint: 2. Find Endpoint
+    Endpoint->>NSM: 3. Establish Connection
+    NSM->>Client: 4. Connection Response
+    
+    Note over Client,Endpoint: Data Flow
+    Client<-->Endpoint: Secure Communication
+    
+    Client->>NSM: 5. Monitor(Connection)
+    NSM->>Client: 6. Status Updates
+    
+    Client->>NSM: 7. Close(Connection)
+    NSM->>Endpoint: 8. Cleanup
+```
 
 1. **Request**: Creates a vWire between Client and Network Service
 2. **Close**: Formally closes a vWire connection
@@ -217,11 +335,60 @@ Network Services can be composed of multiple Endpoints working together:
 - Flexible service chaining
 - Policy-driven composition
 
+```mermaid
+graph LR
+    Client["Client Pod"]
+    Envoy["Envoy Proxy Endpoint"]
+    vL3["vL3 Endpoint"]
+    
+    Client -->|"vWire 1"| Envoy
+    Envoy -->|"vWire 2"| vL3
+    
+    Client -.->|"Request: service-mesh@finance.example.com"| Envoy
+    
+    style Client fill:#e1f5fe
+    style Envoy fill:#fff3e0
+    style vL3 fill:#e8f5e8
+```
+
+Flow:
+1. Client requests service-mesh network service
+2. NSM routes to Envoy Proxy endpoint first
+3. Envoy Proxy connects to vL3 endpoint
+4. Traffic: Client → Envoy → vL3 → Destination
+
 ### Selective Composition
 Different clients can receive different service compositions:
 - Example: IPS insertion for vulnerable application versions
 - Label-based service selection
 - Granular security controls
+
+```mermaid
+graph TB
+    subgraph Vulnerable["App foo v1.1 (vulnerable)"]
+        ClientV11["Client foo v1.1<br/>Labels: app=foo, version=v1.1"]
+    end
+    
+    subgraph Patched["App foo v1.2 (patched)"]
+        ClientV12["Client foo v1.2<br/>Labels: app=foo, version=v1.2"]
+    end
+    
+    IPS["IPS Endpoint<br/>(Security Filtering)"]
+    vL3["vL3 Endpoint<br/>(Network Service)"]
+    
+    ClientV11 --> IPS
+    IPS --> vL3
+    ClientV12 --> vL3
+    
+    style ClientV11 fill:#ffebee
+    style ClientV12 fill:#e8f5e8
+    style IPS fill:#fff3e0
+    style vL3 fill:#e3f2fd
+```
+
+Policy Logic:
+• v1.1 apps → IPS → vL3 (security filtering)
+• v1.2 apps → vL3 (direct access)
 
 ### Topologically Aware Features
 
@@ -242,6 +409,30 @@ Automatically create Endpoints when needed:
 
 ### Complementary Technologies
 
+```mermaid
+graph TB
+    subgraph Stack["Technology Stack"]
+        subgraph L7["Layer 7 - Application Layer"]
+            TSM["Traditional Service Mesh<br/>(Istio/Linkerd)<br/>• Traffic Management<br/>• Load Balancing<br/>• Circuit Breaking<br/>• Observability"]
+        end
+        
+        subgraph L23["Layer 2/3 - Network Layer"]
+            NSM["Network Service Mesh<br/>• Secure Tunneling<br/>• Network Isolation<br/>• Cross-Domain Connectivity<br/>• Identity-based Networking"]
+        end
+        
+        subgraph Infra["Infrastructure Layer"]
+            CNI["Kubernetes CNI / Infrastructure"]
+        end
+    end
+    
+    TSM -.->|"Better Together"| NSM
+    NSM --> CNI
+    
+    style TSM fill:#e3f2fd
+    style NSM fill:#e8f5e8
+    style CNI fill:#fff3e0
+```
+
 **Traditional Service Mesh** (Istio, Linkerd, Consul):
 - Focus on L7 payloads (HTTPS)
 - Application-level features
@@ -260,6 +451,39 @@ Automatically create Endpoints when needed:
 ## Zero Trust and Security
 
 NSM implements Zero Trust principles:
+
+```mermaid
+graph TB
+    subgraph Traditional["Traditional Network Security"]
+        subgraph TrustedZone["Trusted Zone"]
+            AppA1["App A"]
+            AppB1["App B"]
+        end
+        subgraph UntrustedZone["Untrusted Zone"]
+            AppC1["App C"]
+            AppD1["App D"]
+        end
+        TrustedZone -.->|"Perimeter-based<br/>Broad access within zones<br/>Vulnerable to lateral movement"| UntrustedZone
+    end
+    
+    subgraph ZeroTrust["NSM Zero Trust Security"]
+        AppA2["App A<br/>SPIFFE ID"]
+        AppB2["App B<br/>SPIFFE ID"]
+        AppC2["App C<br/>SPIFFE ID"]
+        AppD2["App D<br/>SPIFFE ID"]
+        
+        AppA2 <-->|"Mutual TLS"| AppB2
+        AppC2 <-->|"Mutual TLS"| AppD2
+        AppA2 -.->|"Identity-based<br/>Minimal access per connection<br/>Contained breach impact"| AppC2
+    end
+    
+    style TrustedZone fill:#ffebee
+    style UntrustedZone fill:#ffebee
+    style AppA2 fill:#e8f5e8
+    style AppB2 fill:#e8f5e8
+    style AppC2 fill:#e8f5e8
+    style AppD2 fill:#e8f5e8
+```
 
 **Core Security Features**:
 - **SPIFFE Identity**: Cryptographic workload identity
