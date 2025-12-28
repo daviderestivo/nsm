@@ -1,6 +1,6 @@
 # Network Service Mesh on AWS EKS
 
-This repository provides automated setup for Network Service Mesh (NSM) on Amazon EKS with complete infrastructure provisioning and NSM installation.
+Automated deployment of Network Service Mesh on Amazon EKS with complete infrastructure provisioning, security hardening, and comprehensive examples.
 
 ## Table of Contents
 
@@ -13,21 +13,26 @@ This repository provides automated setup for Network Service Mesh (NSM) on Amazo
 - [Verification](#verification)
 - [Examples](#examples)
 - [Troubleshooting](#troubleshooting)
-- [Performance & Security](#performance--security)
 - [Advanced Configuration](#advanced-configuration)
-- [Cleanup](#cleanup)
 - [FAQ](#faq)
+- [Cleanup](#cleanup)
+- [Next Steps](#next-steps)
 - [Support](#support)
+- [Additional Resources](#additional-resources)
 
 ## Overview
 
-Network Service Mesh (NSM) is a novel approach to solving complicated L2/L3 use cases in Kubernetes that are tricky to address with the existing Kubernetes Network Model. This setup includes:
+This repository provides production-ready automation for deploying Network Service Mesh (NSM) on Amazon EKS. Get a fully functional NSM environment in 15-20 minutes with enterprise-grade security and comprehensive examples.
 
-- **AWS EKS Cluster** - Managed Kubernetes control plane
-- **Spire** - SPIFFE identity framework for secure workload identity
-- **Network Service Mesh** - Advanced networking capabilities for Kubernetes
-- **EBS CSI Driver** - Persistent storage support
-- **VPC CNI** - AWS native networking
+For comprehensive information about Network Service Mesh concepts, architecture, and components, see [NSM Concepts](doc/nsm-concepts.md).
+
+**What You Get**:
+- **Complete EKS Cluster** - Managed Kubernetes with optimized configuration
+- **NSM v1.14.0** - Latest stable Network Service Mesh deployment
+- **SPIFFE/Spire** - Zero-trust identity framework with automatic certificate rotation
+- **AWS Integration** - EBS CSI driver, VPC CNI, and IRSA authentication
+- **5 Working Examples** - From basic connectivity to advanced policy control
+- **Production Ready** - Security hardening and monitoring capabilities
 
 ## Repository Structure
 
@@ -36,9 +41,14 @@ nsm/
 ├── README.md                         # This documentation
 ├── LICENSE                           # Apache 2.0 license
 ├── doc/                              # Documentation
+│   ├── nsm-concepts.md               # NSM concepts and architecture
 │   └── understanding-oidc-provider.md # OIDC provider deep dive
 ├── examples/                         # NSM examples and use cases
-│   └── firewall-service/             # NSM firewall service example
+│   ├── basic/                        # Kernel-to-kernel connectivity
+│   ├── vwire/                        # L2 peer-to-peer communication
+│   ├── dns/                          # Secure DNS resolution
+│   ├── secure-tunnel/                # Encrypted HTTP communication
+│   └── opa-policy/                   # Role-based access control
 └── eks-cluster/                      # EKS cluster setup automation
     ├── Makefile                      # Main automation script
     ├── eks-cluster-role-trust.yaml  # EKS cluster service role trust policy
@@ -59,6 +69,9 @@ nsm/
 - **AWS CLI configured** with credentials (`aws configure`)
 - **IAM permissions** for EKS, IAM, EC2, and EBS management
 
+### Supported Regions
+This automation works in all AWS regions that support EKS. Default region is `eu-central-2`.
+
 ### Verify Prerequisites
 ```bash
 # Check AWS CLI and credentials
@@ -70,6 +83,7 @@ kubectl version --client
 make --version
 
 # Or use the built-in validation
+cd nsm/eks-cluster
 make validate
 ```
 
@@ -100,9 +114,10 @@ make all
 ```
 
 **Default Configuration:**
-- Cluster: `nsm-test` in `eu-central-2`
-- Nodes: 4x t3.medium instances
-- NSM Version: v1.14.0
+- **Cluster**: `nsm-test` in `eu-central-2`
+- **Nodes**: 4x t3.medium instances
+- **NSM Version**: v1.14.0
+- **Deployment Time**: 15-20 minutes
 
 **Custom Configuration:**
 ```bash
@@ -150,10 +165,10 @@ make clean                  # Delete everything (with confirmation)
 ### Configuration Options
 ```bash
 CLUSTER_NAME=my-cluster     # Cluster name (default: nsm-test)
-REGION=us-west-2           # AWS region (default: eu-central-2)
+REGION=eu-central-2         # AWS region (default: eu-central-2)
 NODE_COUNT=6               # Number of nodes (default: 4)
 INSTANCE_TYPE=t3.large     # Instance type (default: t3.medium)
-NSM_VERSION=v1.15.0        # NSM version (default: v1.14.0)
+NSM_VERSION=v1.14.0        # NSM version (default: v1.14.0)
 ```
 
 ## Installation Process
@@ -323,27 +338,6 @@ kubectl describe nodes
 
 ## Advanced Configuration
 
-## Cleanup
-
-```bash
-# Clean NSM only
-make clean-nsm
-
-# Clean everything (cluster, roles, NSM)
-make clean
-```
-
-**Warning**: `make clean` permanently deletes all resources and data.
-
-## Next Steps
-
-- **Start with Examples**: Follow the [learning path](#examples) from basic to advanced
-- **Production Setup**: Configure monitoring, logging, and GitOps workflows  
-- **Security Hardening**: Implement private subnets and additional security controls
-- **Custom Development**: Build your own Network Service Endpoints
-
-## Advanced Configuration
-
 <details>
 <summary>Custom Configuration Options</summary>
 
@@ -430,6 +424,23 @@ NSM operates at the network layer (L2/L3) providing secure connectivity, while s
 
 ## Cleanup
 
+```bash
+# Clean NSM only
+make clean-nsm
+
+# Clean everything (cluster, roles, NSM)
+make clean
+```
+
+**Warning**: `make clean` permanently deletes all resources and data.
+
+## Next Steps
+
+- **Start with Examples**: Follow the [learning path](#examples) from basic to advanced
+- **Production Setup**: Configure monitoring, logging, and GitOps workflows
+- **Security Hardening**: Implement private subnets and additional security controls
+- **Custom Development**: Build your own Network Service Endpoints
+
 ## Support
 
 - [Network Service Mesh Documentation](https://networkservicemesh.io/)
@@ -437,8 +448,9 @@ NSM operates at the network layer (L2/L3) providing secure connectivity, while s
 - [Spire Documentation](https://spiffe.io/docs/latest/spire/)
 - [GitHub Issues](https://github.com/daviderestivo/nsm/issues)
 
-## Additional Readings
+## Additional Resources
 
+- [NSM Concepts](doc/nsm-concepts.md) - Comprehensive NSM concepts and architecture guide
 - [Understanding OIDC Provider](doc/understanding-oidc-provider.md) - Deep dive into OIDC providers and IRSA authentication
 
 ## License
