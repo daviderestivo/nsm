@@ -2,6 +2,23 @@
 
 This repository provides automated setup for Network Service Mesh (NSM) on Amazon EKS with complete infrastructure provisioning and NSM installation.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Available Commands](#available-commands)
+- [Installation Process](#installation-process)
+- [Architecture](#architecture)
+- [Verification](#verification)
+- [Examples](#examples)
+- [Troubleshooting](#troubleshooting)
+- [Performance & Security](#performance--security)
+- [Advanced Configuration](#advanced-configuration)
+- [Cleanup](#cleanup)
+- [FAQ](#faq)
+- [Support](#support)
+
 ## Overview
 
 Network Service Mesh (NSM) is a novel approach to solving complicated L2/L3 use cases in Kubernetes that are tricky to address with the existing Kubernetes Network Model. This setup includes:
@@ -151,6 +168,62 @@ The `make all` command performs these steps:
 7. **Install NSM** - Spire (SPIFFE) and Network Service Mesh components
 8. **Configure storage** - Default storage class and kubeconfig
 
+## Architecture
+
+### NSM on EKS Components
+
+```mermaid
+graph TB
+    subgraph "AWS Cloud"
+        subgraph "EKS Cluster"
+            subgraph "Control Plane"
+                API[EKS API Server]
+            end
+            
+            subgraph "Worker Nodes"
+                subgraph "NSM System"
+                    NSMgr[NSM Manager]
+                    Forwarder[NSM Forwarder]
+                    Registry[NSM Registry]
+                end
+                
+                subgraph "Spire System"
+                    SpireServer[Spire Server]
+                    SpireAgent[Spire Agent]
+                end
+                
+                subgraph "Application Pods"
+                    NSC[Network Service Client]
+                    NSE[Network Service Endpoint]
+                end
+            end
+        end
+        
+        subgraph "AWS Services"
+            IAM[IAM Roles]
+            EBS[EBS CSI Driver]
+            VPC[VPC CNI]
+        end
+    end
+    
+    API --> NSMgr
+    NSMgr --> Registry
+    NSMgr --> Forwarder
+    SpireServer --> SpireAgent
+    NSC --> NSMgr
+    NSE --> NSMgr
+    IAM --> EBS
+    IAM --> VPC
+```
+
+**Key Components**:
+- **NSM Manager**: Orchestrates network service connections
+- **NSM Forwarder**: Handles data plane forwarding
+- **NSM Registry**: Service discovery and endpoint registration
+- **Spire Server/Agent**: SPIFFE identity management
+- **Network Service Client (NSC)**: Consumes network services
+- **Network Service Endpoint (NSE)**: Provides network services
+
 ## Verification
 
 ### Check Cluster
@@ -193,9 +266,35 @@ kubectl get pvc test-pvc
 kubectl delete pvc test-pvc
 ```
 
+## Examples
+
+Explore comprehensive NSM examples with detailed documentation:
+
+| Example | Description | Use Case | Complexity |
+|---------|-------------|----------|------------|
+| [Basic](examples/basic/) | Kernel-to-kernel connectivity | NSM fundamentals | Beginner |
+| [Virtual Wire](examples/vwire/) | L2 peer-to-peer communication | Legacy app support | Intermediate |
+| [DNS Service](examples/dns/) | Secure DNS resolution | Service discovery | Intermediate |
+| [Secure Tunnel](examples/secure-tunnel/) | Encrypted HTTP communication | Zero-trust networking | Advanced |
+| [OPA Policy](examples/opa-policy/) | Role-based access control | API authorization | Advanced |
+
+**Learning Path**:
+1. Start with [Basic](examples/basic/) to understand NSM fundamentals
+2. Try [Virtual Wire](examples/vwire/) for L2 networking concepts
+3. Explore [DNS Service](examples/dns/) for service discovery patterns
+4. Implement [Secure Tunnel](examples/secure-tunnel/) for application security
+5. Master [OPA Policy](examples/opa-policy/) for advanced authorization
+
 ## Troubleshooting
 
-### Common Issues
+**Common Issues**:
+
+| Problem | Cause | Solution |
+|---------|-------|----------|
+| Cluster creation fails | IAM permissions or subnet issues | Check IAM roles and VPC configuration |
+| NSM pods not starting | Resource constraints or image pull issues | Verify node resources and network connectivity |
+| Examples not working | NSM system not ready | Wait for all NSM components to be ready |
+| Storage issues | EBS CSI driver not configured | Verify EBS CSI driver installation |
 
 **Cluster Creation Fails:**
 ```bash
@@ -222,6 +321,8 @@ kubectl get events --sort-by=.metadata.creationTimestamp
 kubectl describe nodes
 ```
 
+## Advanced Configuration
+
 ## Cleanup
 
 ```bash
@@ -236,15 +337,98 @@ make clean
 
 ## Next Steps
 
-- Explore NSM examples in the `examples/` directory:
-  - [Basic](examples/basic/) - Simple kernel-to-kernel connectivity
-  - [Virtual Wire](examples/vwire/) - L2 connectivity between two clients
-  - [DNS Service](examples/dns/) - Secure DNS resolution through NSM
-  - [Secure Tunnel](examples/secure-tunnel/) - Encrypted tunnel connectivity
-  - [OPA Policy](examples/opa-policy/) - HTTP authorization with Open Policy Agent
-- Configure monitoring and logging for production
-- Implement GitOps workflows
-- Use private subnets for production deployments
+- **Start with Examples**: Follow the [learning path](#examples) from basic to advanced
+- **Production Setup**: Configure monitoring, logging, and GitOps workflows  
+- **Security Hardening**: Implement private subnets and additional security controls
+- **Custom Development**: Build your own Network Service Endpoints
+
+## Advanced Configuration
+
+<details>
+<summary>Custom Configuration Options</summary>
+
+**Environment Variables**:
+```bash
+# Cluster configuration
+export CLUSTER_NAME=production-nsm
+export REGION=us-west-2
+export NODE_COUNT=8
+export INSTANCE_TYPE=t3.xlarge
+
+# NSM configuration
+export NSM_VERSION=v1.15.0
+export SPIRE_VERSION=1.8.0
+
+# Deploy with custom settings
+make all
+```
+
+**Private Subnet Deployment**:
+```bash
+# Use existing VPC with private subnets
+export VPC_ID=vpc-12345678
+export SUBNET_IDS=subnet-12345678,subnet-87654321
+make create-cluster
+```
+
+**Production Hardening**:
+```bash
+# Enable additional security features
+export ENABLE_IRSA=true
+export ENABLE_ENCRYPTION=true
+export ENABLE_LOGGING=true
+make all
+```
+</details>
+
+<details>
+<summary>Monitoring & Observability</summary>
+
+**NSM Metrics**:
+```bash
+# Enable Prometheus monitoring
+kubectl apply -f https://raw.githubusercontent.com/networkservicemesh/deployments-k8s/main/examples/observability/jaeger.yaml
+
+# Access NSM dashboard
+kubectl port-forward -n nsm-system svc/jaeger 16686:16686
+```
+
+**Cluster Monitoring**:
+```bash
+# Check cluster health
+kubectl get nodes -o wide
+kubectl top nodes
+kubectl top pods -A
+```
+</details>
+
+## FAQ
+
+<details>
+<summary>What AWS permissions are required?</summary>
+
+The deployment requires permissions for EKS, IAM, EC2, and EBS services. See the IAM policy examples in the `eks-cluster/` directory for specific permissions.
+</details>
+
+<details>
+<summary>Can I use an existing EKS cluster?</summary>
+
+Yes, you can install NSM on an existing cluster using `make install-nsm`. Ensure the cluster has the required addons (VPC CNI, EBS CSI driver).
+</details>
+
+<details>
+<summary>How do I upgrade NSM to a newer version?</summary>
+
+Update the `NSM_VERSION` variable and run `make clean-nsm && make install-nsm`. Always test upgrades in a non-production environment first.
+</details>
+
+<details>
+<summary>What's the difference between NSM and service mesh solutions like Istio?</summary>
+
+NSM operates at the network layer (L2/L3) providing secure connectivity, while service meshes like Istio focus on application layer (L7) features like traffic management and observability.
+</details>
+
+## Cleanup
 
 ## Support
 

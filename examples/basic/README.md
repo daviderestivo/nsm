@@ -9,7 +9,6 @@ Your first NSM connection demonstrating secure pod-to-pod communication.
 - [Architecture Overview](#architecture-overview)
 - [How It Works](#how-it-works)
 - [YAML Files Deep Dive](#yaml-files-deep-dive)
-- [Performance & Security](#performance--security-metrics)
 - [Verification](#verification-commands)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Usage](#advanced-usage)
@@ -330,19 +329,6 @@ nsm-1: 172.16.1.100/31
 - **Dedicated Interfaces**: NSM creates isolated network interfaces
 - **No CNI Overlap**: NSM traffic bypasses Kubernetes CNI
 - **Encrypted Transit**: All traffic encrypted in transit
-
-## Performance & Security Metrics
-
-**Expected Performance**:
-- **Latency**: ~0.1ms additional overhead vs direct networking
-- **Throughput**: Near line-rate performance with kernel mechanism  
-- **CPU Usage**: <5% overhead for encryption/decryption
-
-**Security Features**:
-- **Mutual TLS**: All connections authenticated via SPIFFE
-- **Certificate Rotation**: Automatic 1-hour certificate lifecycle
-- **Network Isolation**: Traffic bypasses cluster CNI
-- **Identity-based**: Cryptographic workload identity
 
 **Expected Results**:
 ```bash

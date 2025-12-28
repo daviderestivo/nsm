@@ -9,7 +9,6 @@ Demonstrates direct Layer 2 communication between multiple clients through NSM v
 - [Architecture Overview](#architecture-overview)
 - [How It Works](#how-it-works)
 - [YAML Files Deep Dive](#yaml-files-deep-dive)
-- [Performance & Security](#performance--security-metrics)
 - [Expected Results](#expected-results)
 - [Verification](#verification-commands)
 - [Troubleshooting](#troubleshooting)
@@ -182,18 +181,6 @@ spec:
 - **cmd-nse-vl3-vpp**: VPP-based NSE with L2/L3 capabilities
 - **Function**: Creates virtual bridge connecting multiple clients
 - **Technology**: Uses Vector Packet Processing (VPP) for high performance
-
-## Performance & Security Metrics
-
-**Expected Performance**:
-- **Latency**: ~0.2ms additional overhead for L2 bridging
-- **Throughput**: Multi-Gbps with VPP acceleration
-- **Scalability**: Supports dozens of concurrent clients
-
-**Security Features**:
-- **Mutual TLS**: All connections authenticated via SPIFFE
-- **L2 Isolation**: Virtual bridge isolated from cluster networking
-- **Identity-based**: Each client verified before bridge access
 
 ## Expected Results
 

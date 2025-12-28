@@ -11,7 +11,6 @@ Demonstrates HTTP API with sophisticated role-based access control using Open Po
 - [YAML Files Deep Dive](#yaml-files-deep-dive)
 - [Policy Configuration](#policy-configuration)
 - [Access Control Rules](#access-control-rules)
-- [Performance & Security](#performance--security-metrics)
 - [Expected Results](#expected-results)
 - [Verification](#verification-commands)
 - [Troubleshooting](#troubleshooting)
@@ -321,19 +320,6 @@ data:
 | `/admin/config` | ❌ Deny | ✅ Allow | ❌ Deny |
 | `/hr/employees` | ❌ Deny | ❌ Deny | ✅ Allow |
 | `/hr/payroll` | ❌ Deny | ❌ Deny | ✅ Allow |
-
-## Performance & Security Metrics
-
-**Expected Performance**:
-- **Authorization Latency**: <5ms per request
-- **Throughput**: 1000+ requests/second
-- **Policy Evaluation**: <1ms for simple rules
-
-**Security Features**:
-- **Fine-grained Access Control**: Path-level authorization
-- **Policy as Code**: Version-controlled access rules
-- **Audit Trail**: All authorization decisions logged
-- **Zero Trust**: Explicit permission required for all access
 
 ## Expected Results
 

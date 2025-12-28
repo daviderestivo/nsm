@@ -10,7 +10,6 @@ Demonstrates isolated DNS service accessible only through NSM with custom domain
 - [How It Works](#how-it-works)
 - [YAML Files Deep Dive](#yaml-files-deep-dive)
 - [DNS Configuration](#dns-configuration)
-- [Performance & Security](#performance--security-metrics)
 - [Expected Results](#expected-results)
 - [Verification](#verification-commands)
 - [Troubleshooting](#troubleshooting)
@@ -237,19 +236,6 @@ spec:
 ```
 
 **Purpose**: Network Service Endpoint enabling DNS service connectivity.
-
-## Performance & Security Metrics
-
-**Expected Performance**:
-- **DNS Query Latency**: <5ms for local zone queries
-- **Throughput**: 1000+ queries/second
-- **Cache Hit Ratio**: 95%+ for repeated queries
-
-**Security Features**:
-- **Network Isolation**: DNS server only accessible via NSM
-- **Encrypted Transport**: All DNS traffic encrypted in transit
-- **Access Control**: Only authorized clients can reach DNS service
-- **Zone Security**: Custom zones isolated from public DNS
 
 ## Expected Results
 

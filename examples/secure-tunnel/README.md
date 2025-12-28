@@ -10,7 +10,6 @@ Demonstrates secure HTTP server accessible only through encrypted NSM tunnel wit
 - [How It Works](#how-it-works)
 - [YAML Files Deep Dive](#yaml-files-deep-dive)
 - [Security Model](#security-model)
-- [Performance & Security](#performance--security-metrics)
 - [Expected Results](#expected-results)
 - [Verification](#verification-commands)
 - [Troubleshooting](#troubleshooting)
@@ -278,19 +277,6 @@ spec:
 | **Authentication** | SPIFFE identity verification | Mutual trust establishment |
 | **Isolation** | Dedicated network interfaces | Traffic segregation |
 | **Access Control** | NSM annotation-based | Explicit service access |
-
-## Performance & Security Metrics
-
-**Expected Performance**:
-- **HTTP Latency**: <2ms additional overhead vs direct connection
-- **Throughput**: Multi-Gbps for large file transfers
-- **Connection Setup**: <100ms for initial tunnel establishment
-
-**Security Guarantees**:
-- **Encryption**: AES-256 encryption for all tunnel traffic
-- **Authentication**: Mutual TLS with certificate rotation
-- **Isolation**: Complete network segregation from cluster CNI
-- **Audit Trail**: All connections logged via NSM
 
 ## Expected Results
 
