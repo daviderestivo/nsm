@@ -28,7 +28,7 @@ Traditionally, workloads have been constrained by their Runtime Domain (K8s, VM,
 
 ```mermaid
 graph TB
-    subgraph "Traditional Model - Strong Coupling"
+    subgraph Title["Traditional Model - Strong Coupling"]
         subgraph K8s["K8s Runtime<br/>Domain"]
             K8sConn["K8s Connectivity<br/>Domain"]
         end
@@ -43,6 +43,7 @@ graph TB
     style K8s fill:#e3f2fd
     style VM fill:#fff3e0
     style DC fill:#e8f5e8
+    style Title fill:#f5f5f5,stroke:#333,stroke-width:2px
 ```
 
 **Key Issues**:
