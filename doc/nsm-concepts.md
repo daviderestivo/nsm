@@ -474,18 +474,103 @@ Policy Logic:
 
 ### Topologically Aware Features
 
-#### Endpoint Selection
-Select Endpoints based on topology:
-```yaml
-destination_selector:
-  nodeName: "{{ .nodeName }}"  # Same node preference
+NSM supports **Topologically Aware Endpoint Selection** and **Scale from Zero** capabilities that optimize resource usage while maintaining performance.
+
+#### Topologically Aware Endpoint Selection
+
+This feature allows NSM to select endpoints based on topology constraints like node location, availability zone, or cloud provider. This improves performance by keeping traffic local.
+
+```mermaid
+graph TB
+    subgraph Zone1["Availability Zone 1"]
+        Client1["Client Pod"]
+        Endpoint1["Local Endpoint"]
+    end
+    subgraph Zone2["Availability Zone 2"]
+        Client2["Client Pod"]
+        Endpoint2["Local Endpoint"]
+    end
+    
+    Client1 -->|"Prefers local"| Endpoint1
+    Client2 -->|"Prefers local"| Endpoint2
+    Client1 -.->|"Fallback"| Endpoint2
+    
+    style Endpoint1 fill:#e8f5e8
+    style Endpoint2 fill:#e8f5e8
 ```
 
+**Example Configuration**:
+```yaml
+apiVersion: networkservicemesh.io/v1
+kind: NetworkService
+metadata:
+  name: local-vl3@marketing.example.com
+spec:
+  payload: IP
+  matches:
+    - source_selector:
+      routes:
+        - destination_selector:
+            nodeName: "{{ .nodeName }}"
+```
+
+The `{{ .nodeName }}` template gets replaced with the client's actual node name, ensuring local endpoint selection.
+
 #### Scale from Zero
-Automatically create Endpoints when needed:
-- First match: existing Endpoint on same node
-- Second match: supplier creates new Endpoint
-- Reselection connects to newly created Endpoint
+
+**The Problem**: Topologically aware selection typically requires pre-deploying endpoints everywhere (expensive in large clusters).
+
+**The Solution**: Create endpoints on-demand only when needed.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant NSM as NSM Manager
+    participant Supplier
+    participant NewEndpoint as New Endpoint
+    
+    Client->>NSM: 1. Request service
+    NSM->>NSM: 2. Try local endpoint (not found)
+    NSM->>Supplier: 3. Contact supplier service
+    Supplier->>NewEndpoint: 4. Create endpoint on target node
+    Supplier->>NSM: 5. Return error (triggers reselect)
+    NSM->>NSM: 6. Reselect - try local endpoint again
+    NSM->>NewEndpoint: 7. Found new local endpoint
+    NSM->>Client: 8. Connection established
+```
+
+**Configuration Example**:
+```yaml
+apiVersion: networkservicemesh.io/v1
+kind: NetworkService
+metadata:
+  name: local-vl3@marketing.example.com
+spec:
+  payload: IP
+  matches:
+    - source_selector:
+      routes:
+        - destination_selector:
+            nodeName: "{{ .nodeName }}"  # Try local first
+    - source_selector:
+      routes:
+        - destination_selector:
+            supplier: true  # Fallback to supplier
+```
+
+**Process Flow**:
+1. **First Match**: Look for existing endpoint on same node as client
+2. **Second Match**: If no local endpoint, contact supplier service
+3. **Supplier Action**: Creates new endpoint on the desired node
+4. **Intentional Error**: Supplier returns error to trigger reselection
+5. **Reselect**: NSM tries matching again and finds the new endpoint
+6. **Connection**: Client connects to the newly created local endpoint
+
+**Benefits**:
+- **Resource Efficiency**: Only create endpoints when needed
+- **Topology Awareness**: Maintains performance benefits of locality
+- **Scalability**: Works in clusters of any size without waste
+- **Cost Effective**: Pay only for endpoints actually used
 
 ## NSM vs Traditional Service Mesh
 
